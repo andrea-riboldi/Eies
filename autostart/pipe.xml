@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd"> -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:lang="http://www.springframework.org/schema/lang"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                           http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang-2.5.xsd">
+    
+    <import resource="classpath*:it/micronixnetwork/**/units.xml"/> 
+    
+    <lang:groovy id="emailSenderAdapter" script-source="scripts/EmailAdapter.groovy">              
+    </lang:groovy>
+    
+    <bean id="myFileReader" parent="fileReader">
+        <property name="outType" value="byte" />                
+    </bean>
+    
+    <bean id="myFilter" parent="fileFilter">
+        <property name="dir" value="/Users/kobo/Desktop/test_in"/>
+        <property name="extensions" value="txt"/>
+        <property name="mark" value="true"/>
+    </bean>
+    
+    <bean id="myEmailSender" parent="emailSender">
+        <property name="host" value="smtp.gmail.com"/>
+        <property name="port" value="465"/>
+        <property name="username" value="micronix.test01"/>
+        <property name="password" value="orologio17"/>
+        <property name="ssl" value="true"/>
+        <property name="adapter" ref="emailSenderAdapter"/>
+    </bean>
+                       
+    <bean id="pipe" class="it.micronixnetwork.pipe.Pipe">
+        <property name="loader">
+            <bean class="it.micronixnetwork.pipe.PipeLayer">
+                <property name="unit" ref="myFilter"/>
+            </bean>
+        </property>
+        <property name="layers">
+            <list>
+                <bean class="it.micronixnetwork.pipe.PipeLayer">
+                    <property name="unit" ref="myFileReader"/>
+                    <property name="workers" value="4"/>
+                </bean>
+                <bean class="it.micronixnetwork.pipe.PipeLayer">
+                    <property name="unit" ref="parserXMLObject"/>
+                    <property name="workers" value="4"/>
+                </bean>
+                <bean class="it.micronixnetwork.pipe.PipeLayer">
+                    <property name="unit" ref="myEmailSender"/>
+                    <property name="workers" value="4"/>
+                </bean>	
+            </list>
+        </property>
+        <property name="clock" value="4"/>
+        <property name="loaderInterval" value="10000"/>
+        <property name="slowFactor" value="1"/>
+    </bean>
+   
+
+</beans>
+
